@@ -43,6 +43,7 @@ export interface SensorConfig {
   oid: string
   name: string
   object_id?: string
+  stack_member?: number
   transform?: string
   template?: string
   unit_of_measurement?: string
