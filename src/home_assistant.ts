@@ -38,7 +38,8 @@ export const createHomeAssistantTopics = async (
     for (const sensor of target.sensors) {
       const sensorType = sensor.binary_sensor ? "binary_sensor" : "sensor"
       const sensorName = slugify(sensor.name)
-      const topic = `${prefix}/${sensorType}/snmp2mqtt/${target.name ? sanitize(target.name) : sanitize(target.host)}_${sensorName}/config`
+      const objectId = sensor.object_id ?? `${target.name ? sanitize(target.name) : sanitize(target.host)}_${sensorName}`
+      const topic = `${prefix}/${sensorType}/snmp2mqtt/${objectId}/config`
 
       const discovery: any = {
         device,
