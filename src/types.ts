@@ -42,6 +42,7 @@ export type VersionConfig = "1" | 1 | "2c" | 3 | "3"
 export interface SensorConfig {
   oid: string
   name: string
+  object_id?: string
   transform?: string
   template?: string
   unit_of_measurement?: string
