@@ -14,7 +14,8 @@ const log = createLogger(config.log)
     readFileSync(`${__dirname}/../package.json`).toString(),
   ).version
 
-  log.main(`Starting snmp2mqtt v${version}...`)
+  log.main(`Starting Cisco Vision SNMP2MQTT v${version}...`)
+  log.main(`Based on SNMP2MQTT by Daniel Chesterton & Andrew J. Swan`)
 
   const mqtt = await createClient(config.mqtt, log, version)
 
