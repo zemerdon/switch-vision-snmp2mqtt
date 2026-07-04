@@ -2,6 +2,11 @@
 <h1>SNMP2MQTT</h1>
 </div>
 
+# Cisco Vision SNMP2MQTT
+Forked from SNMP2MQTT by Daniel Chesterton and Andrew J. Swan.
+
+This fork focuses on Cisco switch monitoring, Home Assistant integration and Cisco Vision.
+
 ## General
 
 [![snmp2mqtt](https://img.shields.io/badge/SNMP-MQTT-blue.svg)](https://github.com/andrewjswan/snmp2mqtt/)
