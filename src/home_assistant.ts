@@ -44,7 +44,7 @@ export const createHomeAssistantTopics = async (
         device,
         origin,
         name: sensor.name,
-	object_id: sensor.object_id,
+	object_id: sensor.object_id || sensorName,
 	unique_id: sensor.object_id ?? sensorName,
 	state_topic: mqtt.sensorValueTopic(sensor, target),
         qos: mqtt.qos,
