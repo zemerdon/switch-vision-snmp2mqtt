@@ -44,8 +44,9 @@ export const createHomeAssistantTopics = async (
         device,
         origin,
         name: sensor.name,
-        unique_id: `snmp2mqtt.${md5(`${target.host}-${sensor.oid}`)}`,
-        state_topic: mqtt.sensorValueTopic(sensor, target),
+	object_id: sensor.object_id,
+	unique_id: sensor.object_id ?? `snmp2mqtt.${md5(`${target.host}-${sensor.oid}`)}`,
+	state_topic: mqtt.sensorValueTopic(sensor, target),
         qos: mqtt.qos,
       }
 
