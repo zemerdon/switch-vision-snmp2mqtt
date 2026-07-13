@@ -28,3 +28,8 @@ Switch Vision is vendor-neutral. Vendor-specific helpers belong under `src/vendo
 ## Attribution
 
 Based on the original SNMP2MQTT project. See `LICENSE` for licensing details.
+
+
+### MQTT backpressure
+
+A serialized MQTT publish queue prevents large discovery and startup bursts from accumulating socket drain listeners.

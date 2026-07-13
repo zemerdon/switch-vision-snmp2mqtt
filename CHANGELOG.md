@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.3
+
+- Serialize MQTT publishes through one shared queue to prevent socket `drain` listener accumulation during large discovery and startup bursts.
+- Preserve publish error propagation while keeping the queue usable after failures.
+- Wait for queued publishes before closing the MQTT client.
+
 ## 0.9.2
 
 - Replaced private package-registry URLs in `yarn.lock` with the public Yarn registry.

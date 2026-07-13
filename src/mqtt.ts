@@ -75,6 +75,10 @@ export const createClient = async (
 
   let client: AsyncMqttClient = await connect(config)
 
+  // Serialize MQTT writes. Large discovery/startup bursts otherwise cause
+  // mqtt.js to attach one socket drain listener per concurrent publish.
+  let publishTail: Promise<unknown> = Promise.resolve()
+
   const publish = (
     topic: string,
     message: string | Record<string, unknown> | number | bigint,
@@ -92,10 +96,24 @@ export const createClient = async (
       })`,
     )
 
-    return client.publish(topic, payload, {
-      qos: config.qos,
-      retain: config.retain,
+    const operation = publishTail.then(async () => {
+      if (!client.connected) {
+        log.warning(`Skipping publish to ${topic}, MQTT connection closed`)
+        return null
+      }
+      return client.publish(topic, payload, {
+        qos: config.qos,
+        retain: config.retain,
+      })
     })
+
+    // Keep the queue usable after a failed publish while returning the original
+    // operation so callers still observe errors.
+    publishTail = operation.then(
+      () => undefined,
+      () => undefined,
+    )
+    return operation
   }
 
   const onConnect = async () => {
@@ -124,7 +142,8 @@ export const createClient = async (
     on: (event: "close" | "connect", cb: () => void) => emitter.on(event, cb),
     off: (event: "close" | "connect", cb: () => void) => emitter.off(event, cb),
     end: async () => {
-      await client.publish(`${config.base_topic}/${STATUS_TOPIC}`, OFFLINE)
+      await publish(`${config.base_topic}/${STATUS_TOPIC}`, OFFLINE)
+      await publishTail
       await client.end()
     },
     qos: config.qos,
