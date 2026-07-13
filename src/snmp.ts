@@ -46,11 +46,17 @@ export class Target extends EventEmitter {
   }
 
   public resume() {
+    // Prevent duplicate timers when MQTT reconnects or resume is called twice.
+    if (this.interval) {
+      clearInterval(this.interval)
+    }
+
+    // Poll once immediately, then continue on the configured interval.
+    this.fetch()
+
     this.interval = setInterval(() => {
       this.fetch()
     }, this.getScanInterval())
-
-    this.fetch()
   }
 
   public end() {

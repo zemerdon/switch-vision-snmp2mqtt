@@ -26,6 +26,16 @@ const log = createLogger(config.log)
       config.homeassistant.prefix,
       version,
     )
+
+    // Give Home Assistant a brief opportunity to process MQTT discovery and
+    // subscribe to the newly-created state topics before the first poll.
+    // Without this, non-retained startup values can be missed and slow groups
+    // may appear empty until their next scan interval.
+    const startupPollDelayMs = 2000
+    log.main(
+      `Waiting ${startupPollDelayMs / 1000}s for Home Assistant discovery subscriptions before initial polling...`,
+    )
+    await new Promise((resolve) => setTimeout(resolve, startupPollDelayMs))
   }
 
   const publishSensors = async (
