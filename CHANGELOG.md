@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2
+
+- Replaced private package-registry URLs in `yarn.lock` with the public Yarn registry.
+- Added explicit public Yarn and npm registry configuration.
+- Retains the immediate startup polling fix from v0.9.1.
+
 ## 0.9.1
 
 - Delay initial target polling for two seconds after Home Assistant MQTT discovery is published, preventing non-retained startup values from being missed.
