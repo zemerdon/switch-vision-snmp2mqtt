@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.6
+
+- Add numeric-OID Juniper EX VLAN collection for non-ELS EX switches such as the EX3300.
+- Correlate IF-MIB interface names, BRIDGE-MIB bridge ports, Q-BRIDGE PVIDs, and JUNIPER-VLAN-MIB port membership.
+- Add derived `juniper_ex_vlan` sensors for access/trunk mode, native VLAN, member VLANs, tagged VLANs, untagged VLANs, and a compact summary.
+- Prevent overlapping polls while table walks are still running.
+
 ## 0.9.3
 
 - Serialize MQTT publishes through one shared queue to prevent socket `drain` listener accumulation during large discovery and startup bursts.
