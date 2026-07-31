@@ -25,6 +25,46 @@ The Home Assistant add-on wrapper is maintained separately in `switch-vision-snm
 
 Switch Vision is vendor-neutral. Vendor-specific helpers belong under `src/vendors/<vendor>/`. Cisco remains the first supported vendor and is represented under `src/vendors/cisco/`.
 
+
+## Juniper EX VLAN sensors
+
+Juniper EX switches that use the non-ELS VLAN model can expose trunk and VLAN data through standard numeric OIDs without installing local MIB files. Configure a derived sensor with `source: juniper_ex_vlan`, the logical or physical interface name, and the value to publish.
+
+```yaml
+targets:
+  - host: 192.168.1.119
+    name: EX3300
+    community: public
+    version: 2c
+    sensors:
+      - name: Uplink VLAN Mode
+        source: juniper_ex_vlan
+        interface: xe-0/1/0
+        attribute: mode
+      - name: Uplink Native VLAN
+        source: juniper_ex_vlan
+        interface: xe-0/1/0
+        attribute: native_vlan
+      - name: Uplink VLANs
+        source: juniper_ex_vlan
+        interface: xe-0/1/0
+        attribute: vlans
+      - name: Uplink VLAN Summary
+        source: juniper_ex_vlan
+        interface: xe-0/1/0
+        attribute: summary
+```
+
+Supported attributes:
+
+- `mode` returns `ACCESS`, `TRUNK`, or `UNKNOWN`.
+- `native_vlan` returns the Q-BRIDGE PVID.
+- `vlans` returns all member VLAN IDs as a comma-separated list.
+- `tagged_vlans` and `untagged_vlans` return the corresponding VLAN lists.
+- `summary` returns a compact access or trunk description.
+
+The collector uses numeric OIDs for `ifName`, `dot1dBasePortIfIndex`, `dot1qPvid`, `jnxExVlanName`, `jnxExVlanTag`, `jnxExVlanPortTagness`, and `jnxExVlanPortAccessMode`. Local Juniper MIB files are not required at runtime.
+
 ## Attribution
 
 Based on the original SNMP2MQTT project. See `LICENSE` for licensing details.

@@ -40,7 +40,16 @@ export interface TargetConfig {
 export type VersionConfig = "1" | 1 | "2c" | 3 | "3"
 
 export interface SensorConfig {
-  oid: string
+  oid?: string
+  source?: "snmp" | "juniper_ex_vlan"
+  interface?: string
+  attribute?:
+    | "mode"
+    | "native_vlan"
+    | "vlans"
+    | "tagged_vlans"
+    | "untagged_vlans"
+    | "summary"
   name: string
   object_id?: string
   transform?: string

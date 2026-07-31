@@ -1,0 +1,41 @@
+log: info
+
+mqtt:
+  host: localhost
+  base_topic: snmp2mqtt
+  retain: true
+  qos: 0
+
+homeassistant:
+  discovery: true
+  prefix: homeassistant
+
+targets:
+  - host: 192.168.1.119
+    name: EX3300
+    device_manufacturer: Juniper
+    device_model: EX3300
+    community: public
+    version: 2c
+    scan_interval: 30
+    sensors:
+      - name: EX3300 Uplink VLAN Mode
+        source: juniper_ex_vlan
+        interface: xe-0/1/0
+        attribute: mode
+        icon: mdi:lan-connect
+      - name: EX3300 Uplink Native VLAN
+        source: juniper_ex_vlan
+        interface: xe-0/1/0
+        attribute: native_vlan
+        icon: mdi:tag-outline
+      - name: EX3300 Uplink VLANs
+        source: juniper_ex_vlan
+        interface: xe-0/1/0
+        attribute: vlans
+        icon: mdi:tag-multiple-outline
+      - name: EX3300 Uplink VLAN Summary
+        source: juniper_ex_vlan
+        interface: xe-0/1/0
+        attribute: summary
+        icon: mdi:information-outline

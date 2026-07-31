@@ -71,10 +71,36 @@ export const schema = {
     },
     sensor: {
       type: "object",
-      required: ["oid", "name"],
+      required: ["name"],
+      anyOf: [
+        { required: ["oid"] },
+        {
+          properties: { source: { const: "juniper_ex_vlan" } },
+          required: ["source", "interface", "attribute"],
+        },
+      ],
       properties: {
         oid: {
           type: "string",
+        },
+        source: {
+          type: "string",
+          enum: ["snmp", "juniper_ex_vlan"],
+          default: "snmp",
+        },
+        interface: {
+          type: "string",
+        },
+        attribute: {
+          type: "string",
+          enum: [
+            "mode",
+            "native_vlan",
+            "vlans",
+            "tagged_vlans",
+            "untagged_vlans",
+            "summary",
+          ],
         },
         name: {
           type: "string",

@@ -4,6 +4,10 @@ import { TargetConfig, VersionConfig } from "./types"
 import { EventEmitter } from "events"
 import { Logger } from "./log"
 import { toBigIntBE } from "bigint-buffer"
+import {
+  collectJuniperVlanPortStates,
+  juniperVlanAttributeValue,
+} from "./vendors/juniper/vlan"
 
 const versionToNetSnmp = (version?: VersionConfig) => {
   switch (version) {
@@ -29,8 +33,9 @@ export declare interface Target {
 
 export class Target extends EventEmitter {
   private session: any
-  private interval?: NodeJS.Timer
+  private interval?: NodeJS.Timeout
   private ending: boolean = false
+  private fetching: boolean = false
 
   public constructor(
     private options: TargetConfig,
@@ -140,59 +145,113 @@ export class Target extends EventEmitter {
     }
   }
 
-  private fetch() {
-    const oids = this.options.sensors.map((sensor) => sensor.oid)
+  private async fetch() {
+    if (this.fetching) {
+      this.log.warning(
+        `Skipping overlapping poll for ${this.options.host}; previous poll is still running`,
+      )
+      return
+    }
+
+    this.fetching = true
+
+    const normalSensors = this.options.sensors
+      .map((sensor, index) => ({ sensor, index }))
+      .filter(({ sensor }) => (sensor.source ?? "snmp") === "snmp")
+    const juniperSensors = this.options.sensors
+      .map((sensor, index) => ({ sensor, index }))
+      .filter(({ sensor }) => sensor.source === "juniper_ex_vlan")
 
     this.log.debug(
-      `Fetching ${oids.length} sensors from ${this.options.host}...`,
+      `Fetching ${normalSensors.length} direct sensor(s) and ${juniperSensors.length} Juniper VLAN sensor(s) from ${this.options.host}...`,
     )
 
-    this.session.get(
-      oids,
-      (error: Error, varbinds: Array<{ value: string | number }>) => {
-        if (error) {
-          const errors = []
+    const values: Array<string | number | bigint | Error> = new Array(
+      this.options.sensors.length,
+    )
 
-          for (let i = 0; i < oids.length; i++) {
-            errors.push(error)
-          }
+    try {
+      if (normalSensors.length) {
+        try {
+          const oids = normalSensors.map(({ sensor }) => sensor.oid as string)
+          const varbinds = await new Promise<
+            Array<{ value: unknown; type: any }>
+          >((resolve, reject) => {
+            this.session.get(oids, (error: Error, results: any[]) => {
+              if (error) reject(error)
+              else resolve(results)
+            })
+          })
 
-          this.emit("response", errors, this.options)
-        } else {
-          const values = []
-
-          for (const i in this.options.sensors) {
-            const sensor = this.options.sensors[i]
-            const result = varbinds[i]
+          for (let position = 0; position < normalSensors.length; position++) {
+            const { sensor, index } = normalSensors[position]
+            const result = varbinds[position]
 
             if (snmp.isVarbindError(result)) {
-              values.push(new Error(snmp.varbindError(result)))
-            } else {
-              let { value, type } = result as {
-                value: string | number | Buffer | bigint
-                type: any
-              }
-
-              switch (type) {
-                case snmp.ObjectType.Counter64:
-                  value = toBigIntBE(value as Buffer)
-                  break
-                case snmp.ObjectType.OctetString:
-                  value = value.toString()
-                  break
-              }
-
-              if (sensor.transform) {
-                value = eval(sensor.transform)
-              }
-
-              values.push(value)
+              values[index] = new Error(snmp.varbindError(result))
+              continue
             }
-          }
 
-          this.emit("response", values, this.options)
+            let { value, type } = result as {
+              value: string | number | Buffer | bigint
+              type: any
+            }
+
+            switch (type) {
+              case snmp.ObjectType.Counter64:
+                value = toBigIntBE(value as Buffer)
+                break
+              case snmp.ObjectType.OctetString:
+                value = value.toString()
+                break
+            }
+
+            if (Buffer.isBuffer(value)) value = value.toString()
+            if (sensor.transform) value = eval(sensor.transform)
+            values[index] = value as string | number | bigint
+          }
+        } catch (error) {
+          const failure =
+            error instanceof Error ? error : new Error(String(error))
+          for (const { index } of normalSensors) values[index] = failure
         }
-      },
-    )
+      }
+
+      if (juniperSensors.length) {
+        try {
+          const states = await collectJuniperVlanPortStates(this.session)
+
+          for (const { sensor, index } of juniperSensors) {
+            const interfaceName = String(sensor.interface || "").trim()
+            const state = states.get(interfaceName)
+            if (!state) {
+              values[index] = new Error(
+                `Juniper VLAN data not found for interface ${interfaceName}`,
+              )
+              continue
+            }
+
+            values[index] = juniperVlanAttributeValue(
+              state,
+              sensor.attribute ?? "summary",
+            )
+          }
+        } catch (error) {
+          const failure =
+            error instanceof Error ? error : new Error(String(error))
+          for (const { index } of juniperSensors) values[index] = failure
+        }
+      }
+
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] === undefined) {
+          values[i] = new Error("Sensor returned no value")
+        }
+      }
+
+      this.emit("response", values, this.options)
+    } finally {
+      this.fetching = false
+    }
   }
 }
