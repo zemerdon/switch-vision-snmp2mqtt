@@ -21,6 +21,10 @@ yarn start
 
 The Home Assistant add-on wrapper is maintained separately in `switch-vision-snmp2mqtt-addon`.
 
+Sensor configuration may optionally set `object_id` to control the Home Assistant
+MQTT Discovery object ID. v0.9.7 validates this field instead of rejecting it as
+an unknown sensor property.
+
 ## Vendor architecture
 
 Switch Vision is vendor-neutral. Vendor-specific helpers belong under `src/vendors/<vendor>/`. Cisco remains the first supported vendor and is represented under `src/vendors/cisco/`.
