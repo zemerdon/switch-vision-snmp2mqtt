@@ -7,9 +7,11 @@ COPY package.json /app
 COPY tsconfig.json /app
 COPY yarn.lock /app
 COPY src /app/src
+COPY tests /app/tests
 
 RUN yarn install --frozen-lockfile
 RUN yarn build
+RUN node tests/config-schema-test.js
 
 RUN mv /app/node_modules /app/node_modules_dev
 RUN yarn install --frozen-lockfile --production

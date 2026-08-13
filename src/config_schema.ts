@@ -105,6 +105,9 @@ export const schema = {
         name: {
           type: "string",
         },
+        object_id: {
+          type: "string",
+        },
         transform: {
           type: "string",
         },

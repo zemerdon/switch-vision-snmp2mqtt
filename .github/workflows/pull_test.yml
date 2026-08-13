@@ -1,8 +1,11 @@
 name: Pull / SNMP2MQTT
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
-    types: [opened, edited]
+    types: [opened, synchronize, reopened, edited]
   workflow_call:
 
 env:

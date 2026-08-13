@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.7
+
+- Allow `object_id` in validated sensor configuration, matching the existing runtime and Home Assistant discovery types.
+- Add a config-schema regression test and run it as part of the Docker build.
+- Re-run pull-request CI when new commits are pushed to an existing pull request.
+
 ## 0.9.6
 
 - Add numeric-OID Juniper EX VLAN collection for non-ELS EX switches such as the EX3300.
