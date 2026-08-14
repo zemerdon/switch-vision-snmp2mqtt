@@ -22,8 +22,18 @@ yarn start
 The Home Assistant add-on wrapper is maintained separately in `switch-vision-snmp2mqtt-addon`.
 
 Sensor configuration may optionally set `object_id` to control the Home Assistant
-MQTT Discovery object ID. v0.9.7 validates this field instead of rejecting it as
-an unknown sensor property.
+MQTT Discovery object ID. Explicit object IDs are validated and duplicate explicit
+Home Assistant identities are rejected before discovery is published.
+
+### Safe sensor transforms
+
+`transform` remains supported in v0.9.8 without executing arbitrary JavaScript.
+The restricted expression evaluator supports `value`, numeric literals, arithmetic,
+comparisons, logical/ternary expressions, parentheses, and an allow-list of safe
+`Math.*` functions/constants. Documented transforms such as `value / 6000`,
+`100 - value`, and `Math.floor(value / 6000 / 60 / 24)` continue to work.
+Property traversal, constructors, assignments, strings, semicolons, globals,
+`require`, and arbitrary function calls are rejected.
 
 ## Vendor architecture
 

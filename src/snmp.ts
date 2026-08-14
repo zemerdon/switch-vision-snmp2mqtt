@@ -1,6 +1,8 @@
 import * as snmp from "net-snmp"
 
 import { TargetConfig, VersionConfig } from "./types"
+import { normalizeSnmpVersion } from "./snmp_version"
+import { evaluateTransform } from "./transform"
 import { EventEmitter } from "events"
 import { Logger } from "./log"
 import { toBigIntBE } from "bigint-buffer"
@@ -10,14 +12,13 @@ import {
 } from "./vendors/juniper/vlan"
 
 const versionToNetSnmp = (version?: VersionConfig) => {
-  switch (version) {
+  switch (normalizeSnmpVersion(version)) {
+    case "1":
+      return snmp.Version1 as number
     case "2c":
       return snmp.Version2c as number
-    case 3:
     case "3":
       return snmp.Version3 as number
-    default:
-      return snmp.Version1 as number
   }
 }
 
@@ -25,7 +26,7 @@ export declare interface Target {
   on(
     event: "response",
     listener: (
-      values: Array<string | number | bigint>,
+      values: Array<string | number | bigint | boolean>,
       target: TargetConfig,
     ) => void,
   ): this
@@ -166,7 +167,7 @@ export class Target extends EventEmitter {
       `Fetching ${normalSensors.length} direct sensor(s) and ${juniperSensors.length} Juniper VLAN sensor(s) from ${this.options.host}...`,
     )
 
-    const values: Array<string | number | bigint | Error> = new Array(
+    const values: Array<string | number | bigint | boolean | Error> = new Array(
       this.options.sensors.length,
     )
 
@@ -207,8 +208,15 @@ export class Target extends EventEmitter {
             }
 
             if (Buffer.isBuffer(value)) value = value.toString()
-            if (sensor.transform) value = eval(sensor.transform)
-            values[index] = value as string | number | bigint
+
+            let finalValue = value as string | number | bigint | boolean
+            if (sensor.transform) {
+              finalValue = evaluateTransform(
+                sensor.transform,
+                value as string | number | bigint,
+              )
+            }
+            values[index] = finalValue
           }
         } catch (error) {
           const failure =

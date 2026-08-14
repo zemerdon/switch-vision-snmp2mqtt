@@ -32,7 +32,7 @@ export const schema = {
           type: "string",
         },
         version: {
-          type: ["string", "number"],
+          enum: [1, "1", "2c", 3, "3"],
         },
         scan_interval: {
           type: "number",
@@ -58,13 +58,6 @@ export const schema = {
           type: "array",
           default: [],
           items: { $ref: "#/definitions/sensor" },
-        },
-        user: {
-          type: "string",
-        },
-        level: {
-          type: "string",
-          enum: ["noAuthNoPriv", "authNoPriv", "authPriv"],
         },
       },
       additionalProperties: false,

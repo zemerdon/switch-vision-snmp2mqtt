@@ -6,6 +6,7 @@ import { JSON_SCHEMA, load } from "js-yaml"
 import { schema } from "./config_schema"
 import { createLogger } from "./log"
 import { Config } from "./types"
+import { validateConfigSemantics } from "./config_semantics"
 
 export function loadConfig(): Config {
   const yamlConfig = loadYamlConfig()
@@ -45,6 +46,20 @@ function validate(userConfig: unknown) {
 
       process.exit(1)
     }
+  }
+
+  const semanticErrors = validateConfigSemantics(userConfig as Config)
+  if (semanticErrors.length) {
+    const log = createLogger("ERROR")
+    log.error(
+      `${semanticErrors.length} semantic error${
+        semanticErrors.length > 1 ? "s" : ""
+      } found in config...`,
+    )
+    for (const error of semanticErrors) {
+      log.error(error)
+    }
+    process.exit(1)
   }
 
   return userConfig as Config

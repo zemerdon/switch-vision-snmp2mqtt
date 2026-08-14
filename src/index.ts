@@ -39,7 +39,7 @@ const log = createLogger(config.log)
   }
 
   const publishSensors = async (
-    values: Array<string | number | bigint | Error>,
+    values: Array<string | number | bigint | boolean | Error>,
     target: TargetConfig,
   ) => {
     const promises: Array<Promise<any>> = []

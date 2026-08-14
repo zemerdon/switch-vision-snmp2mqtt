@@ -10,7 +10,7 @@ const ajv = new Ajv({
 
 const validate = ajv.compile(schema)
 
-const valid = {
+const fixture = () => ({
   mqtt: {
     host: "mqtt.example.invalid",
     retain: true,
@@ -36,18 +36,42 @@ const valid = {
       ],
     },
   ],
-}
+})
 
-if (!validate(valid)) {
+if (!validate(fixture())) {
   console.error(validate.errors)
-  throw new Error("object_id fixture should validate")
+  throw new Error("Valid object_id fixture should validate")
 }
 
-const invalid = JSON.parse(JSON.stringify(valid))
-invalid.targets[0].sensors[0].unexpected_switch_vision_field = true
+const unknownSensorField = fixture()
+unknownSensorField.targets[0].sensors[0].unexpected_switch_vision_field = true
+if (validate(unknownSensorField)) {
+  throw new Error("Unknown sensor property should still be rejected")
+}
 
-if (validate(invalid)) {
-  throw new Error("unknown sensor property should still be rejected")
+for (const version of [1, "1", "2c", 3, "3"]) {
+  const config = fixture()
+  config.targets[0].version = version
+  if (!validate(config)) {
+    console.error(validate.errors)
+    throw new Error(`Valid SNMP version rejected: ${String(version)}`)
+  }
+}
+
+for (const version of [2, "2", "v2c", 4, null]) {
+  const config = fixture()
+  config.targets[0].version = version
+  if (validate(config)) {
+    throw new Error(`Invalid SNMP version accepted by schema: ${String(version)}`)
+  }
+}
+
+for (const staleField of ["user", "level"]) {
+  const config = fixture()
+  config.targets[0][staleField] = "legacy"
+  if (validate(config)) {
+    throw new Error(`Stale SNMPv3 field '${staleField}' should be rejected`)
+  }
 }
 
 console.log("Switch Vision SNMP2MQTT config-schema regression: PASS")
