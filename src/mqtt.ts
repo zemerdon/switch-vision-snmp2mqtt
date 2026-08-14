@@ -81,7 +81,7 @@ export const createClient = async (
 
   const publish = (
     topic: string,
-    message: string | Record<string, unknown> | number | bigint,
+    message: string | Record<string, unknown> | number | bigint | boolean,
   ) => {
     if (!client.connected) {
       log.warning(`Skipping publish to ${topic}, MQTT connection closed`)

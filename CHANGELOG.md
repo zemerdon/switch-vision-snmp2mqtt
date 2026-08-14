@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.8
+
+- Replace raw `eval(sensor.transform)` with a restricted expression evaluator while preserving documented arithmetic and safe `Math.*` transforms.
+- Reject unsupported SNMP versions instead of silently falling back to SNMPv1.
+- Add semantic SNMPv3 validation for username/auth/privacy dependencies.
+- Reject duplicate explicit Home Assistant `object_id` identities before discovery is published while preserving legacy no-`object_id` configurations.
+- Remove stale `user` and `level` SNMPv3 schema fields that are not used by the runtime.
+- Update `js-yaml` from 5.2.0 to 5.2.3 with the upstream security fixes.
+- Add regression coverage for unsafe transforms, SNMP version handling, semantic configuration validation, and schema cleanup.
+
 ## 0.9.7
 
 - Allow `object_id` in validated sensor configuration, matching the existing runtime and Home Assistant discovery types.
