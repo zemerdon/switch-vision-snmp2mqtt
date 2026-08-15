@@ -1,4 +1,6 @@
-import * as snmp from "net-snmp"
+import { SnmpTable, walkTable } from "../../snmp_table"
+
+export { walkTable } from "../../snmp_table"
 
 export const JUNIPER_VLAN_OIDS = {
   ifName: "1.3.6.1.2.1.31.1.1.1.1",
@@ -29,13 +31,6 @@ export interface JuniperVlanPortState {
   untaggedVlans: number[]
 }
 
-type Table = Map<string, string | number>
-
-const parseIndex = (oid: string, baseOid: string): string => {
-  const prefix = `${baseOid}.`
-  return oid.startsWith(prefix) ? oid.slice(prefix.length) : ""
-}
-
 const valueToString = (value: unknown): string => {
   if (Buffer.isBuffer(value)) return value.toString()
   return String(value ?? "")
@@ -46,38 +41,14 @@ const valueToNumber = (value: unknown): number | undefined => {
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
-export const walkTable = (session: any, oid: string): Promise<Table> =>
-  new Promise((resolve, reject) => {
-    const values: Table = new Map()
-
-    session.subtree(
-      oid,
-      20,
-      (varbinds: Array<{ oid: string; value: unknown }>) => {
-        for (const varbind of varbinds) {
-          if (snmp.isVarbindError(varbind)) continue
-          const index = parseIndex(varbind.oid, oid)
-          if (!index) continue
-          values.set(
-            index,
-            Buffer.isBuffer(varbind.value)
-              ? valueToString(varbind.value)
-              : (varbind.value as string | number),
-          )
-        }
-      },
-      (error: Error | null) => {
-        if (error) reject(error)
-        else resolve(values)
-      },
-    )
-  })
-
 const normaliseInterfaceName = (name: string): string =>
-  String(name || "").trim().replace(/\.0$/, "")
+  String(name || "")
+    .trim()
+    .replace(/\.0$/, "")
 
 export const collectJuniperVlanPortStates = async (
   session: any,
+  ifNamesOverride?: SnmpTable,
 ): Promise<Map<string, JuniperVlanPortState>> => {
   const [
     ifNames,
@@ -88,7 +59,7 @@ export const collectJuniperVlanPortStates = async (
     tagness,
     accessModes,
   ] = await Promise.all([
-    walkTable(session, JUNIPER_VLAN_OIDS.ifName),
+    ifNamesOverride ?? walkTable(session, JUNIPER_VLAN_OIDS.ifName),
     walkTable(session, JUNIPER_VLAN_OIDS.dot1dBasePortIfIndex),
     walkTable(session, JUNIPER_VLAN_OIDS.dot1qPvid),
     walkTable(session, JUNIPER_VLAN_OIDS.jnxExVlanName),
@@ -125,7 +96,9 @@ export const collectJuniperVlanPortStates = async (
   }
 
   const statesByBridgePort = new Map<number, JuniperVlanPortState>()
-  const ensureState = (bridgePort: number): JuniperVlanPortState | undefined => {
+  const ensureState = (
+    bridgePort: number,
+  ): JuniperVlanPortState | undefined => {
     const ifIndex = bridgePortToIfIndex.get(bridgePort)
     if (ifIndex === undefined) return undefined
     const interfaceName = ifIndexToName.get(ifIndex)
@@ -156,7 +129,7 @@ export const collectJuniperVlanPortStates = async (
   }
 
   const processVlanPortTable = (
-    table: Table,
+    table: SnmpTable,
     handler: (
       state: JuniperVlanPortState,
       vlanTag: number,

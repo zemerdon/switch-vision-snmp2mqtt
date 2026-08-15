@@ -79,6 +79,38 @@ Supported attributes:
 
 The collector uses numeric OIDs for `ifName`, `dot1dBasePortIfIndex`, `dot1qPvid`, `jnxExVlanName`, `jnxExVlanTag`, `jnxExVlanPortTagness`, and `jnxExVlanPortAccessMode`. Local Juniper MIB files are not required at runtime.
 
+## Live interface sensors
+
+Switch Vision can resolve IF-MIB sensors by interface name at runtime instead of baking an ifIndex into configuration. This is useful on platforms such as Juniper EX where ifIndex values can be sparse, can change across reboots, and an empty SFP/SFP+ cage may not exist in IF-MIB until an optic is present.
+
+```yaml
+targets:
+  - host: 192.168.1.108
+    name: EX3300
+    community: readonly
+    version: 2c
+    sensors:
+      - name: SFP 1 Status
+        source: interface
+        interfaces:
+          - xe-0/1/0
+          - ge-0/1/0
+        attribute: oper_status
+
+      - name: SFP 1 RX Bytes
+        source: interface
+        interfaces:
+          - xe-0/1/0
+          - ge-0/1/0
+        attribute: rx_bytes
+```
+
+Supported live-interface attributes are `oper_status`, `admin_status`, `speed_mbps`, `rx_bytes`, `tx_bytes`, and `alias`.
+
+The first currently exposed interface name wins. The ifName table is resolved again on every poll, so a reboot reindex or a Juniper cage changing between `xe-...` and `ge-...` does not require regenerated YAML. If none of the configured names currently exists, the sensor is published unavailable and no ifIndex is guessed.
+
+Juniper `juniper_ex_vlan` sensors also accept the same `interfaces:` candidate list while retaining the existing singular `interface:` form for compatibility.
+
 ## Attribution
 
 Based on the original SNMP2MQTT project. See `LICENSE` for licensing details.

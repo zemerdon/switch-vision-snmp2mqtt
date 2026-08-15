@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.9
+
+- Add generic live IF-MIB interface sensors that resolve configured interface-name candidates to the current ifIndex on every poll.
+- Add runtime attributes for operational status, administrative status, negotiated/high speed, 64-bit RX/TX counters, and interface alias.
+- Reuse one ifName walk per target poll across live interface sensors and Juniper VLAN sensors.
+- Allow Juniper VLAN sensors to specify alternate interface-name candidates so GE/XE mode changes remain live without regenerating configuration.
+- Publish unexposed interface sensors as unavailable without warning-level log spam; no ifIndex is guessed for empty cages.
+- Add schema, semantic, reindex, GE/XE fallback, and missing-interface regression coverage.
+
 ## 0.9.8
 
 - Replace raw `eval(sensor.transform)` with a restricted expression evaluator while preserving documented arithmetic and safe `Math.*` transforms.

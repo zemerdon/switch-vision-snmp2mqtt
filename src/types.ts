@@ -39,17 +39,28 @@ export interface TargetConfig {
 
 export type VersionConfig = "1" | 1 | "2c" | 3 | "3"
 
+export type InterfaceAttribute =
+  | "oper_status"
+  | "admin_status"
+  | "speed_mbps"
+  | "rx_bytes"
+  | "tx_bytes"
+  | "alias"
+
+export type JuniperVlanAttribute =
+  | "mode"
+  | "native_vlan"
+  | "vlans"
+  | "tagged_vlans"
+  | "untagged_vlans"
+  | "summary"
+
 export interface SensorConfig {
   oid?: string
-  source?: "snmp" | "juniper_ex_vlan"
+  source?: "snmp" | "juniper_ex_vlan" | "interface"
   interface?: string
-  attribute?:
-    | "mode"
-    | "native_vlan"
-    | "vlans"
-    | "tagged_vlans"
-    | "untagged_vlans"
-    | "summary"
+  interfaces?: string[]
+  attribute?: InterfaceAttribute | JuniperVlanAttribute
   name: string
   object_id?: string
   transform?: string
