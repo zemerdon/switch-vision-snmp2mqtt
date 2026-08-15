@@ -1,6 +1,11 @@
 import * as snmp from "net-snmp"
 
-import { TargetConfig, VersionConfig } from "./types"
+import {
+  InterfaceAttribute,
+  SensorConfig,
+  TargetConfig,
+  VersionConfig,
+} from "./types"
 import { normalizeSnmpVersion } from "./snmp_version"
 import { evaluateTransform } from "./transform"
 import { EventEmitter } from "events"
@@ -10,6 +15,14 @@ import {
   collectJuniperVlanPortStates,
   juniperVlanAttributeValue,
 } from "./vendors/juniper/vlan"
+import {
+  IF_NAME_OID,
+  interfaceCandidates,
+  interfaceOid,
+  resolveInterfaceIndex,
+} from "./interface"
+import { SnmpTable, walkTable } from "./snmp_table"
+import { SensorUnavailableError } from "./sensor_error"
 
 const versionToNetSnmp = (version?: VersionConfig) => {
   switch (normalizeSnmpVersion(version)) {
@@ -146,6 +159,54 @@ export class Target extends EventEmitter {
     }
   }
 
+  private getOids(
+    oids: string[],
+  ): Promise<Array<{ value: unknown; type: any }>> {
+    return new Promise((resolve, reject) => {
+      this.session.get(oids, (error: Error, results: any[]) => {
+        if (error) reject(error)
+        else resolve(results)
+      })
+    })
+  }
+
+  private decodeVarbind(
+    result: any,
+    sensor: SensorConfig,
+  ): string | number | bigint | boolean | Error {
+    if (!result) return new Error("SNMP sensor returned no varbind")
+
+    if (snmp.isVarbindError(result)) {
+      return new Error(snmp.varbindError(result))
+    }
+
+    let { value, type } = result as {
+      value: string | number | Buffer | bigint
+      type: any
+    }
+
+    switch (type) {
+      case snmp.ObjectType.Counter64:
+        value = toBigIntBE(value as Buffer)
+        break
+      case snmp.ObjectType.OctetString:
+        value = value.toString()
+        break
+    }
+
+    if (Buffer.isBuffer(value)) value = value.toString()
+
+    let finalValue = value as string | number | bigint | boolean
+    if (sensor.transform) {
+      finalValue = evaluateTransform(
+        sensor.transform,
+        value as string | number | bigint,
+      )
+    }
+
+    return finalValue
+  }
+
   private async fetch() {
     if (this.fetching) {
       this.log.warning(
@@ -159,12 +220,15 @@ export class Target extends EventEmitter {
     const normalSensors = this.options.sensors
       .map((sensor, index) => ({ sensor, index }))
       .filter(({ sensor }) => (sensor.source ?? "snmp") === "snmp")
+    const interfaceSensors = this.options.sensors
+      .map((sensor, index) => ({ sensor, index }))
+      .filter(({ sensor }) => sensor.source === "interface")
     const juniperSensors = this.options.sensors
       .map((sensor, index) => ({ sensor, index }))
       .filter(({ sensor }) => sensor.source === "juniper_ex_vlan")
 
     this.log.debug(
-      `Fetching ${normalSensors.length} direct sensor(s) and ${juniperSensors.length} Juniper VLAN sensor(s) from ${this.options.host}...`,
+      `Fetching ${normalSensors.length} direct sensor(s), ${interfaceSensors.length} live interface sensor(s), and ${juniperSensors.length} Juniper VLAN sensor(s) from ${this.options.host}...`,
     )
 
     const values: Array<string | number | bigint | boolean | Error> = new Array(
@@ -175,48 +239,11 @@ export class Target extends EventEmitter {
       if (normalSensors.length) {
         try {
           const oids = normalSensors.map(({ sensor }) => sensor.oid as string)
-          const varbinds = await new Promise<
-            Array<{ value: unknown; type: any }>
-          >((resolve, reject) => {
-            this.session.get(oids, (error: Error, results: any[]) => {
-              if (error) reject(error)
-              else resolve(results)
-            })
-          })
+          const varbinds = await this.getOids(oids)
 
           for (let position = 0; position < normalSensors.length; position++) {
             const { sensor, index } = normalSensors[position]
-            const result = varbinds[position]
-
-            if (snmp.isVarbindError(result)) {
-              values[index] = new Error(snmp.varbindError(result))
-              continue
-            }
-
-            let { value, type } = result as {
-              value: string | number | Buffer | bigint
-              type: any
-            }
-
-            switch (type) {
-              case snmp.ObjectType.Counter64:
-                value = toBigIntBE(value as Buffer)
-                break
-              case snmp.ObjectType.OctetString:
-                value = value.toString()
-                break
-            }
-
-            if (Buffer.isBuffer(value)) value = value.toString()
-
-            let finalValue = value as string | number | bigint | boolean
-            if (sensor.transform) {
-              finalValue = evaluateTransform(
-                sensor.transform,
-                value as string | number | bigint,
-              )
-            }
-            values[index] = finalValue
+            values[index] = this.decodeVarbind(varbinds[position], sensor)
           }
         } catch (error) {
           const failure =
@@ -225,23 +252,97 @@ export class Target extends EventEmitter {
         }
       }
 
-      if (juniperSensors.length) {
+      let ifNames: SnmpTable | undefined
+      if (interfaceSensors.length || juniperSensors.length) {
         try {
-          const states = await collectJuniperVlanPortStates(this.session)
+          ifNames = await walkTable(this.session, IF_NAME_OID)
+        } catch (error) {
+          const failure =
+            error instanceof Error ? error : new Error(String(error))
+          for (const { index } of interfaceSensors) values[index] = failure
+          for (const { index } of juniperSensors) values[index] = failure
+        }
+      }
+
+      if (interfaceSensors.length && ifNames) {
+        const requests: Array<{
+          sensor: SensorConfig
+          index: number
+          oid: string
+        }> = []
+
+        for (const { sensor, index } of interfaceSensors) {
+          const candidates = interfaceCandidates(sensor)
+          const resolved = resolveInterfaceIndex(ifNames, candidates)
+
+          if (!resolved) {
+            values[index] = new SensorUnavailableError(
+              `Interface not currently exposed: ${candidates.join(" or ")}`,
+            )
+            continue
+          }
+
+          requests.push({
+            sensor,
+            index,
+            oid: interfaceOid(
+              sensor.attribute as InterfaceAttribute,
+              resolved.ifIndex,
+            ),
+          })
+        }
+
+        if (requests.length) {
+          try {
+            const varbinds = await this.getOids(
+              requests.map((request) => request.oid),
+            )
+
+            for (let position = 0; position < requests.length; position++) {
+              const { sensor, index } = requests[position]
+              values[index] = this.decodeVarbind(varbinds[position], sensor)
+            }
+          } catch (error) {
+            const failure =
+              error instanceof Error ? error : new Error(String(error))
+            for (const { index } of requests) values[index] = failure
+          }
+        }
+      }
+
+      if (juniperSensors.length && ifNames) {
+        try {
+          const states = await collectJuniperVlanPortStates(
+            this.session,
+            ifNames,
+          )
 
           for (const { sensor, index } of juniperSensors) {
-            const interfaceName = String(sensor.interface || "").trim()
-            const state = states.get(interfaceName)
+            const candidates = interfaceCandidates(sensor)
+            let state
+            let resolvedName = ""
+
+            for (const candidate of candidates) {
+              state = states.get(candidate)
+              if (state) {
+                resolvedName = candidate
+                break
+              }
+            }
+
             if (!state) {
-              values[index] = new Error(
-                `Juniper VLAN data not found for interface ${interfaceName}`,
+              values[index] = new SensorUnavailableError(
+                `Juniper VLAN data not currently available for interface ${candidates.join(" or ")}`,
               )
               continue
             }
 
+            this.log.debug(
+              `Resolved Juniper VLAN sensor ${sensor.name} through ${resolvedName}`,
+            )
             values[index] = juniperVlanAttributeValue(
               state,
-              sensor.attribute ?? "summary",
+              sensor.attribute as any,
             )
           }
         } catch (error) {

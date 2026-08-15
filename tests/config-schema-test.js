@@ -74,4 +74,44 @@ for (const staleField of ["user", "level"]) {
   }
 }
 
+const liveInterface = fixture()
+liveInterface.targets[0].sensors = [
+  {
+    name: "SFP 1 RX",
+    source: "interface",
+    interfaces: ["xe-0/1/0", "ge-0/1/0"],
+    attribute: "rx_bytes",
+  },
+]
+if (!validate(liveInterface)) {
+  console.error(validate.errors)
+  throw new Error("Valid live interface sensor should validate")
+}
+
+const liveInterfaceMissingName = fixture()
+liveInterfaceMissingName.targets[0].sensors = [
+  {
+    name: "Broken live interface",
+    source: "interface",
+    attribute: "oper_status",
+  },
+]
+if (validate(liveInterfaceMissingName)) {
+  throw new Error("Live interface sensor without interface candidates should fail")
+}
+
+const juniperCandidateVlan = fixture()
+juniperCandidateVlan.targets[0].sensors = [
+  {
+    name: "SFP VLAN Mode",
+    source: "juniper_ex_vlan",
+    interfaces: ["xe-0/1/0", "ge-0/1/0"],
+    attribute: "mode",
+  },
+]
+if (!validate(juniperCandidateVlan)) {
+  console.error(validate.errors)
+  throw new Error("Juniper VLAN candidate interface list should validate")
+}
+
 console.log("Switch Vision SNMP2MQTT config-schema regression: PASS")

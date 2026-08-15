@@ -69,7 +69,13 @@ export const schema = {
         { required: ["oid"] },
         {
           properties: { source: { const: "juniper_ex_vlan" } },
-          required: ["source", "interface", "attribute"],
+          required: ["source", "attribute"],
+          anyOf: [{ required: ["interface"] }, { required: ["interfaces"] }],
+        },
+        {
+          properties: { source: { const: "interface" } },
+          required: ["source", "attribute"],
+          anyOf: [{ required: ["interface"] }, { required: ["interfaces"] }],
         },
       ],
       properties: {
@@ -78,11 +84,22 @@ export const schema = {
         },
         source: {
           type: "string",
-          enum: ["snmp", "juniper_ex_vlan"],
+          enum: ["snmp", "juniper_ex_vlan", "interface"],
           default: "snmp",
         },
         interface: {
           type: "string",
+          minLength: 1,
+        },
+        interfaces: {
+          type: "array",
+          minItems: 1,
+          maxItems: 8,
+          uniqueItems: true,
+          items: {
+            type: "string",
+            minLength: 1,
+          },
         },
         attribute: {
           type: "string",
@@ -93,6 +110,12 @@ export const schema = {
             "tagged_vlans",
             "untagged_vlans",
             "summary",
+            "oper_status",
+            "admin_status",
+            "speed_mbps",
+            "rx_bytes",
+            "tx_bytes",
+            "alias",
           ],
         },
         name: {

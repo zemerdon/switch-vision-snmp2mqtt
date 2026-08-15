@@ -74,4 +74,63 @@ if (!validateConfigSemantics(badPriv).some((error) => error.includes("priv_key r
   throw new Error("priv_key without auth_key was not rejected")
 }
 
+const liveInterface = base()
+liveInterface.targets[0].sensors = [
+  {
+    name: "SFP 1 Status",
+    source: "interface",
+    interfaces: ["xe-0/1/0", "ge-0/1/0"],
+    attribute: "oper_status",
+  },
+]
+if (validateConfigSemantics(liveInterface).length) {
+  throw new Error(validateConfigSemantics(liveInterface).join("\n"))
+}
+
+const badInterfaceAttribute = base()
+badInterfaceAttribute.targets[0].sensors = [
+  {
+    name: "Broken interface",
+    source: "interface",
+    interfaces: ["xe-0/1/0"],
+    attribute: "summary",
+  },
+]
+if (!validateConfigSemantics(badInterfaceAttribute).some((error) =>
+  error.includes("unsupported interface attribute")
+)) {
+  throw new Error("Invalid live interface attribute was not rejected")
+}
+
+const duplicateCandidates = base()
+duplicateCandidates.targets[0].sensors = [
+  {
+    name: "Duplicate candidates",
+    source: "interface",
+    interfaces: ["xe-0/1/0", "xe-0/1/0"],
+    attribute: "oper_status",
+  },
+]
+if (!validateConfigSemantics(duplicateCandidates).some((error) =>
+  error.includes("must be unique")
+)) {
+  throw new Error("Duplicate interface candidates were not rejected")
+}
+
+const namedSensorWithOid = base()
+namedSensorWithOid.targets[0].sensors = [
+  {
+    name: "Ambiguous sensor",
+    source: "interface",
+    interfaces: ["xe-0/1/0"],
+    attribute: "oper_status",
+    oid: "1.3.6.1.2.1.2.2.1.8.601",
+  },
+]
+if (!validateConfigSemantics(namedSensorWithOid).some((error) =>
+  error.includes("must not define oid")
+)) {
+  throw new Error("Named interface sensor with fixed oid was not rejected")
+}
+
 console.log("Switch Vision SNMP2MQTT config-semantics regression: PASS")

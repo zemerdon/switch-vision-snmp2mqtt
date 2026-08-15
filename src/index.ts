@@ -5,6 +5,7 @@ import { loadConfig } from "./config"
 import { TargetConfig } from "./types"
 import { createHomeAssistantTopics } from "./home_assistant"
 import { readFileSync } from "fs"
+import { SensorUnavailableError } from "./sensor_error"
 
 const config = loadConfig()
 const log = createLogger(config.log)
@@ -49,11 +50,17 @@ const log = createLogger(config.log)
       const sensor = target.sensors[i]
 
       if (value instanceof Error) {
-        log.warning(
-          `Error ${value.message} fetching sensor ${JSON.stringify(
-            sensor,
-          )} from ${target.host}`,
-        )
+        if (value instanceof SensorUnavailableError) {
+          log.debug(
+            `Sensor unavailable for ${target.host}: ${sensor.name} (${value.message})`,
+          )
+        } else {
+          log.warning(
+            `Error ${value.message} fetching sensor ${JSON.stringify(
+              sensor,
+            )} from ${target.host}`,
+          )
+        }
 
         promises.push(
           mqtt.publish(mqtt.sensorStatusTopic(sensor, target), mqtt.OFFLINE),
