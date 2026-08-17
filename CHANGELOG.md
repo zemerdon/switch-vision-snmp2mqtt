@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.10
+
+- Add graceful `SIGTERM` handling alongside the existing `SIGINT` shutdown path so standalone/container runtimes close MQTT and SNMP sessions cleanly regardless of the normal termination signal.
+- Make shutdown single-flight so duplicate termination/error events cannot run MQTT/SNMP cleanup concurrently.
+- Add a direct shutdown-signal regression and run it in pull-request CI before Docker image builds.
+- Preserve polling, MQTT reconnect behaviour, transform evaluation, Home Assistant discovery, live IF-MIB resolution, and Juniper EX3300 handling unchanged.
+
 ## 0.9.9
 
 - Add generic live IF-MIB interface sensors that resolve configured interface-name candidates to the current ifIndex on every poll.

@@ -25,6 +25,9 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v7
 
+      - name: Validate graceful shutdown signals
+        run: node tests/test_shutdown_signals.js
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 

@@ -103,22 +103,40 @@ const log = createLogger(config.log)
     clients.forEach((client) => client.resume())
   })
 
-  const exit = async (code: number = 0) => {
-    log.main("Exiting program...")
-    mqtt.off("close", pauseClients)
+  let exitPromise: Promise<void> | null = null
 
-    await mqtt.end()
-
-    for (const client of clients) {
-      await client.end()
+  const exit = (code: number = 0): Promise<void> => {
+    if (exitPromise) {
+      return exitPromise
     }
 
-    process.exit(code)
+    exitPromise = (async () => {
+      log.main("Exiting program...")
+      mqtt.off("close", pauseClients)
+
+      await mqtt.end()
+
+      for (const client of clients) {
+        await client.end()
+      }
+
+      process.exit(code)
+    })()
+
+    return exitPromise
   }
 
-  process.on("SIGINT", async () => {
-    log.main("Caught interrupt signal, exiting gracefully...")
+  const handleTerminationSignal = async (signal: "SIGINT" | "SIGTERM") => {
+    log.main(`Caught ${signal}, exiting gracefully...`)
     await exit(0)
+  }
+
+  process.once("SIGINT", () => {
+    void handleTerminationSignal("SIGINT")
+  })
+
+  process.once("SIGTERM", () => {
+    void handleTerminationSignal("SIGTERM")
   })
 
   process.on("unhandledRejection", async (error) => {
