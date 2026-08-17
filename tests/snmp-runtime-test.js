@@ -121,7 +121,7 @@ async function main() {
   await testCounter64()
   await testOverlappingPollSuppression()
   console.log(
-    "Switch Vision SNMP2MQTT Core v0.9.11 SNMP runtime regression: PASS",
+    "Switch Vision SNMP2MQTT Core v0.9.12 SNMP runtime regression: PASS",
   )
 }
 
