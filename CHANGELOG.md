@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9.12 — Immutable Node container base
+
+- Pin the SNMP2MQTT Core `node:lts-alpine3.22` container base to its resolved immutable multi-architecture OCI digest.
+- Preserve automatic amd64, arm64/v8, and supported platform selection through the pinned OCI image index.
+- Prevent future Core container rebuilds from silently consuming a different Node base image without an explicit source change.
+- SNMP polling, live IF-MIB interface resolution, Juniper EX3300 handling, safe transforms, MQTT lifecycle, shutdown handling, and Home Assistant discovery behavior are unchanged.
+
 ## 0.9.11
 
 - Add direct runtime regression coverage for SNMP Counter64 decoding and overlapping-poll suppression.
