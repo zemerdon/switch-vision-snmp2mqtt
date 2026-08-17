@@ -162,7 +162,7 @@ async function main() {
   )
 
   console.log(
-    "Switch Vision SNMP2MQTT Core v0.9.12 MQTT runtime regression: PASS",
+    "Switch Vision SNMP2MQTT Core v0.9.13 MQTT runtime regression: PASS",
   )
 }
 
