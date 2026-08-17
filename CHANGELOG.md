@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.13 — Node 20 type-definition alignment
+
+- Align `@types/node` with the existing Node 20 TypeScript target by replacing the legacy Node 14 definitions with exact version `20.19.43`.
+- Keep `@tsconfig/node20`, TypeScript, runtime dependencies, container base, SNMP polling, live IF-MIB resolution, Juniper EX3300 handling, MQTT lifecycle, safe transforms, and shutdown behavior unchanged.
+- Preserve all existing runtime regression coverage.
+
 ## v0.9.12 — Immutable Node container base
 
 - Pin the SNMP2MQTT Core `node:lts-alpine3.22` container base to its resolved immutable multi-architecture OCI digest.
