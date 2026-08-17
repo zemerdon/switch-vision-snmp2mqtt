@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.11
+
+- Add direct runtime regression coverage for SNMP Counter64 decoding and overlapping-poll suppression.
+- Add direct MQTT runtime coverage for serialized publish ordering, queue recovery after a failed publish, reconnect availability republishing, disconnected-publish handling, and graceful offline shutdown.
+- Add a single `yarn test:regression` command covering the complete existing Core regression suite.
+- Run the direct regression suite in pull-request CI before the more expensive multi-architecture Docker builds.
+- Continue running the regression suite during Docker image builds as an additional packaging gate.
+- No changes to SNMP polling behaviour, MQTT runtime behaviour, transforms, Home Assistant discovery, live IF-MIB resolution, or Juniper EX3300 handling.
+
 ## 0.9.10
 
 - Add graceful `SIGTERM` handling alongside the existing `SIGINT` shutdown path so standalone/container runtimes close MQTT and SNMP sessions cleanly regardless of the normal termination signal.

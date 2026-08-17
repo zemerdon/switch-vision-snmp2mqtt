@@ -1,6 +1,6 @@
 {
   "name": "switch-vision-snmp2mqtt",
-  "version": "0.9.10",
+  "version": "0.9.11",
   "description": "Switch Vision SNMP2MQTT bridge for Home Assistant",
   "license": "MIT",
   "bin": {
@@ -54,6 +54,7 @@
     "start": "ts-node --files src/index.ts",
     "prettier:check": "prettier src --check",
     "prettier:write": "prettier src --write",
-    "test:shutdown": "node tests/test_shutdown_signals.js"
+    "test:shutdown": "node tests/test_shutdown_signals.js",
+    "test:regression": "yarn build && node tests/config-schema-test.js && node tests/config-semantics-test.js && node tests/snmp-version-test.js && node tests/transform-test.js && node tests/interface-resolution-test.js && node tests/snmp-runtime-test.js && node tests/mqtt-runtime-test.js && node tests/test_shutdown_signals.js"
   }
 }

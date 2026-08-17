@@ -16,6 +16,9 @@ RUN node tests/config-semantics-test.js
 RUN node tests/snmp-version-test.js
 RUN node tests/transform-test.js
 RUN node tests/interface-resolution-test.js
+RUN node tests/snmp-runtime-test.js
+RUN node tests/mqtt-runtime-test.js
+RUN node tests/test_shutdown_signals.js
 
 RUN mv /app/node_modules /app/node_modules_dev
 RUN yarn install --frozen-lockfile --production
