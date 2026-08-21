@@ -8,9 +8,6 @@ updates:
       interval: weekly
       day: monday
       time: "12:00"
-    labels:
-      - dependencies
-      - github-actions
     ignore:
       - dependency-name: "*"
         update-types:
@@ -26,9 +23,6 @@ updates:
       interval: weekly
       day: monday
       time: "12:00"
-    labels:
-      - dependencies
-      - node
     ignore:
       - dependency-name: "@types/node"
       - dependency-name: "*"
@@ -45,9 +39,6 @@ updates:
       interval: weekly
       day: monday
       time: "12:00"
-    labels:
-      - dependencies
-      - docker
     ignore:
       - dependency-name: "*"
         update-types:
