@@ -11,6 +11,10 @@ updates:
     labels:
       - dependencies
       - github-actions
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     commit-message:
       prefix: "[DEP]"
 
@@ -27,6 +31,9 @@ updates:
       - node
     ignore:
       - dependency-name: "@types/node"
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     commit-message:
       prefix: "[NPM]"
 
@@ -41,5 +48,9 @@ updates:
     labels:
       - dependencies
       - docker
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     commit-message:
       prefix: "DCR"
