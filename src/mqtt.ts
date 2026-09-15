@@ -75,6 +75,20 @@ export const createClient = async (
 
   let client: AsyncMqttClient = await connect(config)
 
+  // Discovery supplies an opaque UUID after generating the exact YAML file.
+  // It is not derived from credentials or configuration content. Publishing
+  // this marker in the retained runtime config lets Discovery prove that this
+  // process consumed the file it just handed to the HA app wrapper.
+  const generationValue = String(process.env.SWITCH_VISION_GENERATION_ID || "")
+    .trim()
+    .toLowerCase()
+  const switchVisionGenerationId =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+      generationValue,
+    )
+      ? generationValue
+      : null
+
   // Serialize MQTT writes. Large discovery/startup bursts otherwise cause
   // mqtt.js to attach one socket drain listener per concurrent publish.
   let publishTail: Promise<unknown> = Promise.resolve()
@@ -118,7 +132,11 @@ export const createClient = async (
 
   const onConnect = async () => {
     await publish(`${config.base_topic}/${STATUS_TOPIC}`, ONLINE)
-    await publish(`${config.base_topic}/${CONFIG_TOPIC}`, { version })
+    const runtimeConfig: Record<string, unknown> = { version }
+    if (switchVisionGenerationId) {
+      runtimeConfig.switch_vision_generation_id = switchVisionGenerationId
+    }
+    await publish(`${config.base_topic}/${CONFIG_TOPIC}`, runtimeConfig)
     emitter.emit("connect")
   }
 

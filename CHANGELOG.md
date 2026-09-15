@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.1 — Switch Vision generated-configuration identity
+
+- Accept the optional, non-secret `SWITCH_VISION_GENERATION_ID` UUID supplied by the Home Assistant app wrapper after it imports a Discovery-generated target file.
+- Publish that opaque UUID as `switch_vision_generation_id` in the retained `<base_topic>/config` runtime marker so Discovery can prove the exact generated YAML was loaded.
+- Ignore missing or malformed generation markers, preserving manual-target and older generated-YAML compatibility without weakening normal MQTT status/config publication.
+- Add MQTT runtime regression coverage for the retained generation marker and keep existing serialized publication, reconnect and shutdown behavior unchanged.
+
 ## v1.0.0 — Dynamic EX3300 uplink state and stable release contract
 
 - Add shared candidate identity/state debounce for Juniper EX3300 dual-personality uplinks so GE/XE transitions do not flap inventory or publish transient stale identities.

@@ -52,6 +52,9 @@ async function main() {
     error() {},
   }
 
+  const generationId = "123e4567-e89b-12d3-a456-426614174000"
+  process.env.SWITCH_VISION_GENERATION_ID = generationId
+
   let client
   try {
     client = await createClient(
@@ -63,9 +66,10 @@ async function main() {
         clean: true,
       },
       log,
-      "0.9.11",
+      "1.0.1",
     )
   } finally {
+    delete process.env.SWITCH_VISION_GENERATION_ID
     asyncMqtt.connectAsync = originalConnectAsync
   }
 
@@ -76,6 +80,13 @@ async function main() {
       "switch_vision/test/config",
     ],
   )
+  const runtimeMarker = JSON.parse(fake.calls[1].payload)
+  assert.strictEqual(runtimeMarker.version, "1.0.1")
+  assert.strictEqual(
+    runtimeMarker.switch_vision_generation_id,
+    generationId,
+  )
+  assert.strictEqual(fake.calls[1].options.retain, true)
 
   const first = client.publish("switch_vision/test/gate/1", "one")
   const second = client.publish("switch_vision/test/gate/2", "two")
@@ -162,7 +173,7 @@ async function main() {
   )
 
   console.log(
-    "Switch Vision SNMP2MQTT Core v1.0.0 MQTT runtime regression: PASS",
+    "Switch Vision SNMP2MQTT Core v1.0.1 MQTT runtime regression: PASS",
   )
 }
 
