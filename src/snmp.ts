@@ -10,7 +10,6 @@ import { normalizeSnmpVersion } from "./snmp_version"
 import { evaluateTransform } from "./transform"
 import { EventEmitter } from "events"
 import { Logger } from "./log"
-import { toBigIntBE } from "bigint-buffer"
 import {
   collectJuniperVlanPortStates,
   juniperVlanAttributeValue,
@@ -189,9 +188,14 @@ export class Target extends EventEmitter {
     }
 
     switch (type) {
-      case snmp.ObjectType.Counter64:
-        value = toBigIntBE(value as Buffer)
+      case snmp.ObjectType.Counter64: {
+        const counter = value as Buffer
+        if (!Buffer.isBuffer(counter) || counter.length !== 8) {
+          return new Error("SNMP Counter64 must be an 8-byte buffer")
+        }
+        value = counter.readBigUInt64BE(0)
         break
+      }
       case snmp.ObjectType.OctetString:
         value = value.toString()
         break

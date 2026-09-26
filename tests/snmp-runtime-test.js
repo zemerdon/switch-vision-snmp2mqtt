@@ -53,6 +53,22 @@ async function testCounter64() {
   )
 
   assert.strictEqual(decoded, expected)
+
+  const malformed = target.decodeVarbind(
+    {
+      type: snmp.ObjectType.Counter64,
+      value: Buffer.alloc(7),
+    },
+    {
+      name: "Counter",
+      oid: "1.3.6.1.2.1.31.1.1.1.6.1",
+    },
+  )
+  assert(malformed instanceof Error)
+  assert.strictEqual(
+    malformed.message,
+    "SNMP Counter64 must be an 8-byte buffer",
+  )
 }
 
 async function testOverlappingPollSuppression() {
@@ -465,7 +481,7 @@ async function main() {
   await testEx3300ResumeAfterConfirmation()
   await testNonEx3300Compatibility()
   console.log(
-    "Switch Vision SNMP2MQTT Core v1.0.1 SNMP runtime regression: PASS",
+    "Switch Vision SNMP2MQTT Core v1.0.2 SNMP runtime regression: PASS",
   )
 }
 

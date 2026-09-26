@@ -66,7 +66,7 @@ async function main() {
         clean: true,
       },
       log,
-      "1.0.1",
+      "1.0.2",
     )
   } finally {
     delete process.env.SWITCH_VISION_GENERATION_ID
@@ -81,7 +81,7 @@ async function main() {
     ],
   )
   const runtimeMarker = JSON.parse(fake.calls[1].payload)
-  assert.strictEqual(runtimeMarker.version, "1.0.1")
+  assert.strictEqual(runtimeMarker.version, "1.0.2")
   assert.strictEqual(
     runtimeMarker.switch_vision_generation_id,
     generationId,
@@ -173,7 +173,7 @@ async function main() {
   )
 
   console.log(
-    "Switch Vision SNMP2MQTT Core v1.0.1 MQTT runtime regression: PASS",
+    "Switch Vision SNMP2MQTT Core v1.0.2 MQTT runtime regression: PASS",
   )
 }
 

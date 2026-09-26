@@ -11,6 +11,7 @@ COPY tests /app/tests
 
 RUN yarn install --frozen-lockfile
 RUN yarn build
+RUN node tests/dependency-security-test.js
 RUN node tests/config-schema-test.js
 RUN node tests/config-semantics-test.js
 RUN node tests/snmp-version-test.js
