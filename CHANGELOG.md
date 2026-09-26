@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.2 — Dependency security and native Counter64
+
+- Replace the unpatched `bigint-buffer` Counter64 helper with Node's native 8-byte big-endian `Buffer.readBigUInt64BE()` decoding and reject malformed Counter64 buffers explicitly.
+- Pin patched transitive production dependencies for `ws`, `brace-expansion`, and `fast-uri` while keeping the existing `async-mqtt`, MQTT 4.x, AJV, and SNMP runtime APIs unchanged.
+- Add malformed Counter64 regression coverage plus a permanent dependency-security floor regression, and retain the complete SNMP, MQTT, transform, interface-resolution, and shutdown regression suite.
+
 ## v1.0.1 — Switch Vision generated-configuration identity
 
 - Accept the optional, non-secret `SWITCH_VISION_GENERATION_ID` UUID supplied by the Home Assistant app wrapper after it imports a Discovery-generated target file.

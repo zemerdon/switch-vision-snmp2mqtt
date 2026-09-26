@@ -1,6 +1,6 @@
 {
   "name": "switch-vision-snmp2mqtt",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Switch Vision SNMP2MQTT bridge for Home Assistant",
   "license": "MIT",
   "bin": {
@@ -30,7 +30,6 @@
     "ajv": "^8.20.0",
     "async-mqtt": "^2.6.3",
     "better-ajv-errors": "^2.0.3",
-    "bigint-buffer": "^1.1.5",
     "js-yaml": "^5.2.3",
     "luxon": "^3.7.2",
     "net-snmp": "^3.26.3",
@@ -45,6 +44,11 @@
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   },
+  "resolutions": {
+    "brace-expansion": "1.1.18",
+    "fast-uri": "3.1.6",
+    "ws": "7.5.11"
+  },
   "prettier": {
     "semi": false,
     "endOfLine": "lf"
@@ -55,6 +59,6 @@
     "prettier:check": "prettier src --check",
     "prettier:write": "prettier src --write",
     "test:shutdown": "node tests/test_shutdown_signals.js",
-    "test:regression": "yarn build && node tests/config-schema-test.js && node tests/config-semantics-test.js && node tests/snmp-version-test.js && node tests/transform-test.js && node tests/interface-resolution-test.js && node tests/snmp-runtime-test.js && node tests/mqtt-runtime-test.js && node tests/test_shutdown_signals.js"
+    "test:regression": "yarn build && node tests/dependency-security-test.js && node tests/config-schema-test.js && node tests/config-semantics-test.js && node tests/snmp-version-test.js && node tests/transform-test.js && node tests/interface-resolution-test.js && node tests/snmp-runtime-test.js && node tests/mqtt-runtime-test.js && node tests/test_shutdown_signals.js"
   }
 }
