@@ -37,38 +37,53 @@ async function testCounter64() {
     log,
   )
 
-  const expected = 0x0102030405060708n
-  const buffer = Buffer.alloc(8)
-  buffer.writeBigUInt64BE(expected)
+  const sensor = {
+    name: "Counter",
+    oid: "1.3.6.1.2.1.31.1.1.1.6.1",
+  }
 
-  const decoded = target.decodeVarbind(
-    {
-      type: snmp.ObjectType.Counter64,
-      value: buffer,
-    },
-    {
-      name: "Counter",
-      oid: "1.3.6.1.2.1.31.1.1.1.6.1",
-    },
-  )
+  const cases = [
+    [Buffer.from([0x00]), 0n],
+    [Buffer.from([0x7f]), 0x7fn],
+    [Buffer.from([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]), 0x01020304050607n],
+    [Buffer.from("0102030405060708", "hex"), 0x0102030405060708n],
+    [Buffer.from("00ffffffffffffffff", "hex"), 0xffffffffffffffffn],
+  ]
 
-  assert.strictEqual(decoded, expected)
+  for (const [buffer, expected] of cases) {
+    const decoded = target.decodeVarbind(
+      {
+        type: snmp.ObjectType.Counter64,
+        value: buffer,
+      },
+      sensor,
+    )
+    assert.strictEqual(decoded, expected)
+  }
 
-  const malformed = target.decodeVarbind(
-    {
-      type: snmp.ObjectType.Counter64,
-      value: Buffer.alloc(7),
-    },
-    {
-      name: "Counter",
-      oid: "1.3.6.1.2.1.31.1.1.1.6.1",
-    },
-  )
-  assert(malformed instanceof Error)
-  assert.strictEqual(
-    malformed.message,
-    "SNMP Counter64 must be an 8-byte buffer",
-  )
+  const malformedCases = [
+    [Buffer.alloc(0), "SNMP Counter64 must be a non-empty buffer"],
+    [
+      Buffer.from("01ffffffffffffffff", "hex"),
+      "SNMP Counter64 exceeds the unsigned 64-bit range",
+    ],
+    [
+      Buffer.alloc(10),
+      "SNMP Counter64 exceeds the unsigned 64-bit range",
+    ],
+  ]
+
+  for (const [buffer, message] of malformedCases) {
+    const malformed = target.decodeVarbind(
+      {
+        type: snmp.ObjectType.Counter64,
+        value: buffer,
+      },
+      sensor,
+    )
+    assert(malformed instanceof Error)
+    assert.strictEqual(malformed.message, message)
+  }
 }
 
 async function testOverlappingPollSuppression() {
@@ -481,7 +496,7 @@ async function main() {
   await testEx3300ResumeAfterConfirmation()
   await testNonEx3300Compatibility()
   console.log(
-    "Switch Vision SNMP2MQTT Core v1.0.2 SNMP runtime regression: PASS",
+    "Switch Vision SNMP2MQTT Core v1.0.3 SNMP runtime regression: PASS",
   )
 }
 
