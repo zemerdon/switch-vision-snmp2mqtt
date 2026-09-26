@@ -190,10 +190,25 @@ export class Target extends EventEmitter {
     switch (type) {
       case snmp.ObjectType.Counter64: {
         const counter = value as Buffer
-        if (!Buffer.isBuffer(counter) || counter.length !== 8) {
-          return new Error("SNMP Counter64 must be an 8-byte buffer")
+        if (!Buffer.isBuffer(counter) || counter.length === 0) {
+          return new Error("SNMP Counter64 must be a non-empty buffer")
         }
-        value = counter.readBigUInt64BE(0)
+
+        let bytes = counter
+        if (bytes.length === 9) {
+          if (bytes[0] !== 0) {
+            return new Error("SNMP Counter64 exceeds the unsigned 64-bit range")
+          }
+          bytes = bytes.subarray(1)
+        } else if (bytes.length > 8) {
+          return new Error("SNMP Counter64 exceeds the unsigned 64-bit range")
+        }
+
+        let decoded = 0n
+        for (const byte of bytes) {
+          decoded = (decoded << 8n) | BigInt(byte)
+        }
+        value = decoded
         break
       }
       case snmp.ObjectType.OctetString:

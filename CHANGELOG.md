@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.3 — BER-safe Counter64 decoding
+
+- Decode received SNMP Counter64 BER payloads from their valid variable-length unsigned representation instead of requiring every value to be exactly eight bytes.
+- Accept 1-8 byte counters plus the valid nine-byte leading-zero representation needed for the top unsigned 64-bit range, while continuing to reject empty and overflowing encodings.
+- Add permanent Counter64 boundary regressions covering short live-style values, full-width values, the leading-zero maximum value, and malformed overflow cases.
+- Preserve the dependency-security repair from 1.0.2 and the existing SNMP polling, live interface resolution, MQTT, transform, and shutdown behavior.
+
 ## v1.0.2 — Dependency security and native Counter64
 
 - Replace the unpatched `bigint-buffer` Counter64 helper with Node's native 8-byte big-endian `Buffer.readBigUInt64BE()` decoding and reject malformed Counter64 buffers explicitly.
