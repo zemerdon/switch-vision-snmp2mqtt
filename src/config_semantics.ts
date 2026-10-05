@@ -84,6 +84,30 @@ export function validateConfigSemantics(config: Config): string[] {
         continue
       }
 
+      if (source === "sirivision_uptime") {
+        if (target.device_model !== "SR-S25G3420F") {
+          errors.push(
+            `${sensorPath}: sirivision_uptime is restricted to device_model SR-S25G3420F`,
+          )
+        }
+        if (sensor.oid) {
+          errors.push(
+            `${sensorPath}: sirivision_uptime sensor must not define oid`,
+          )
+        }
+        if (sensor.interface || sensor.interfaces?.length) {
+          errors.push(
+            `${sensorPath}: sirivision_uptime sensor must not define interface candidates`,
+          )
+        }
+        if (sensor.attribute) {
+          errors.push(
+            `${sensorPath}: sirivision_uptime sensor must not define attribute`,
+          )
+        }
+        continue
+      }
+
       const candidates = sensorInterfaceCandidates(sensor)
       if (!candidates.length) {
         errors.push(

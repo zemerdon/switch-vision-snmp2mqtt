@@ -40,6 +40,28 @@ Property traversal, constructors, assignments, strings, semicolons, globals,
 Switch Vision is vendor-neutral. Vendor-specific helpers belong under `src/vendors/<vendor>/`. Cisco remains the first supported vendor and is represented under `src/vendors/cisco/`.
 
 
+## Sirivision SR-S25G3420F uptime
+
+The reviewed SR-S25G3420F SNMP agent can restart its standard `sysUpTime.0`
+clock without the switch chassis rebooting. Switch Vision Discovery therefore
+uses the exact-model `sirivision_uptime` derived source for this model.
+
+```yaml
+targets:
+  - host: 192.0.2.70
+    name: SR-S25G3420F
+    device_model: SR-S25G3420F
+    community: readonly
+    version: 2c
+    sensors:
+      - name: Switch Uptime
+        source: sirivision_uptime
+```
+
+The collector reads numeric `snmpEngineTime.0` and `sysORLastChange.0` on
+each poll and publishes the reviewed exact-model reconstruction as TimeTicks.
+This source is deliberately rejected for other models.
+
 ## Juniper EX VLAN sensors
 
 Juniper EX switches that use the non-ELS VLAN model can expose trunk and VLAN data through standard numeric OIDs without installing local MIB files. Configure a derived sensor with `source: juniper_ex_vlan`, the logical or physical interface name, and the value to publish.

@@ -9,6 +9,9 @@ const { Target } = require("../dist/snmp")
 const {
   JUNIPER_VLAN_OIDS,
 } = require("../dist/vendors/juniper/vlan")
+const {
+  SIRIVISION_UPTIME_OIDS,
+} = require("../dist/vendors/sirivision/uptime")
 
 const warnings = []
 
@@ -449,6 +452,44 @@ async function testEx3300ResumeAfterConfirmation() {
   assert.ok(calls.includes(JUNIPER_VLAN_OIDS.dot1qPvid))
 }
 
+async function testSirivisionDerivedUptime() {
+  const target = new Target(
+    {
+      host: "192.0.2.70",
+      device_model: "SR-S25G3420F",
+      version: "2c",
+      community: "readonly",
+      sensors: [
+        {
+          name: "Switch Uptime",
+          source: "sirivision_uptime",
+        },
+      ],
+    },
+    log,
+  )
+
+  target.getOids = async (oids) => {
+    assert.deepStrictEqual(oids, [
+      SIRIVISION_UPTIME_OIDS.snmpEngineTime,
+      SIRIVISION_UPTIME_OIDS.sysOrLastChange,
+    ])
+    return [
+      {
+        type: snmp.ObjectType.Integer,
+        value: 5433267,
+      },
+      {
+        type: snmp.ObjectType.TimeTicks,
+        value: 135676500,
+      },
+    ]
+  }
+
+  const values = await fetchResponse(target)
+  assert.strictEqual(values[0], 679003200)
+}
+
 async function testNonEx3300Compatibility() {
   resetInterfaceWatchState()
 
@@ -494,9 +535,10 @@ async function main() {
   await testEx3300WatcherDebounce()
   await testEx3300PendingAndStaleSuppression()
   await testEx3300ResumeAfterConfirmation()
+  await testSirivisionDerivedUptime()
   await testNonEx3300Compatibility()
   console.log(
-    "Switch Vision SNMP2MQTT Core v1.0.3 SNMP runtime regression: PASS",
+    "Switch Vision SNMP2MQTT Core v1.0.4 SNMP runtime regression: PASS",
   )
 }
 

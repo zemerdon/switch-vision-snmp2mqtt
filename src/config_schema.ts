@@ -77,6 +77,10 @@ export const schema = {
           required: ["source", "attribute"],
           anyOf: [{ required: ["interface"] }, { required: ["interfaces"] }],
         },
+        {
+          properties: { source: { const: "sirivision_uptime" } },
+          required: ["source"],
+        },
       ],
       properties: {
         oid: {
@@ -84,7 +88,7 @@ export const schema = {
         },
         source: {
           type: "string",
-          enum: ["snmp", "juniper_ex_vlan", "interface"],
+          enum: ["snmp", "juniper_ex_vlan", "interface", "sirivision_uptime"],
           default: "snmp",
         },
         interface: {

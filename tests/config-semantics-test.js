@@ -133,4 +133,30 @@ if (!validateConfigSemantics(namedSensorWithOid).some((error) =>
   throw new Error("Named interface sensor with fixed oid was not rejected")
 }
 
+const sirivisionUptime = base()
+sirivisionUptime.targets[0].device_model = "SR-S25G3420F"
+sirivisionUptime.targets[0].sensors = [
+  {
+    name: "Switch Uptime",
+    source: "sirivision_uptime",
+  },
+]
+if (validateConfigSemantics(sirivisionUptime).length) {
+  throw new Error(validateConfigSemantics(sirivisionUptime).join("\n"))
+}
+
+const wrongModelUptime = base()
+wrongModelUptime.targets[0].device_model = "Other Switch"
+wrongModelUptime.targets[0].sensors = [
+  {
+    name: "Switch Uptime",
+    source: "sirivision_uptime",
+  },
+]
+if (!validateConfigSemantics(wrongModelUptime).some((error) =>
+  error.includes("restricted to device_model SR-S25G3420F")
+)) {
+  throw new Error("Sirivision uptime source was accepted for another model")
+}
+
 console.log("Switch Vision SNMP2MQTT config-semantics regression: PASS")

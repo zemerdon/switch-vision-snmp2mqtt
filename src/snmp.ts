@@ -25,6 +25,10 @@ import {
 } from "./interface"
 import { SnmpTable, walkTable } from "./snmp_table"
 import { SensorUnavailableError } from "./sensor_error"
+import {
+  SIRIVISION_UPTIME_OIDS,
+  sirivisionUptimeTicks,
+} from "./vendors/sirivision/uptime"
 
 const versionToNetSnmp = (version?: VersionConfig) => {
   switch (normalizeSnmpVersion(version)) {
@@ -248,9 +252,12 @@ export class Target extends EventEmitter {
     const juniperSensors = this.options.sensors
       .map((sensor, index) => ({ sensor, index }))
       .filter(({ sensor }) => sensor.source === "juniper_ex_vlan")
+    const sirivisionUptimeSensors = this.options.sensors
+      .map((sensor, index) => ({ sensor, index }))
+      .filter(({ sensor }) => sensor.source === "sirivision_uptime")
 
     this.log.debug(
-      `Fetching ${normalSensors.length} direct sensor(s), ${interfaceSensors.length} live interface sensor(s), and ${juniperSensors.length} Juniper VLAN sensor(s) from ${this.options.host}...`,
+      `Fetching ${normalSensors.length} direct sensor(s), ${interfaceSensors.length} live interface sensor(s), ${juniperSensors.length} Juniper VLAN sensor(s), and ${sirivisionUptimeSensors.length} Sirivision uptime sensor(s) from ${this.options.host}...`,
     )
 
     const values: Array<string | number | bigint | boolean | Error> = new Array(
@@ -271,6 +278,31 @@ export class Target extends EventEmitter {
           const failure =
             error instanceof Error ? error : new Error(String(error))
           for (const { index } of normalSensors) values[index] = failure
+        }
+      }
+
+      if (sirivisionUptimeSensors.length) {
+        try {
+          const varbinds = await this.getOids([
+            SIRIVISION_UPTIME_OIDS.snmpEngineTime,
+            SIRIVISION_UPTIME_OIDS.sysOrLastChange,
+          ])
+          const rawSensor: SensorConfig = { name: "Sirivision uptime input" }
+          const engineTime = this.decodeVarbind(varbinds[0], rawSensor)
+          const lastChange = this.decodeVarbind(varbinds[1], rawSensor)
+          if (engineTime instanceof Error) throw engineTime
+          if (lastChange instanceof Error) throw lastChange
+
+          const uptimeTicks = sirivisionUptimeTicks(engineTime, lastChange)
+          for (const { sensor, index } of sirivisionUptimeSensors) {
+            values[index] = sensor.transform
+              ? evaluateTransform(sensor.transform, uptimeTicks)
+              : uptimeTicks
+          }
+        } catch (error) {
+          const failure =
+            error instanceof Error ? error : new Error(String(error))
+          for (const { index } of sirivisionUptimeSensors) values[index] = failure
         }
       }
 

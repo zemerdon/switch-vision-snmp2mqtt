@@ -114,4 +114,17 @@ if (!validate(juniperCandidateVlan)) {
   throw new Error("Juniper VLAN candidate interface list should validate")
 }
 
+const sirivisionUptime = fixture()
+sirivisionUptime.targets[0].device_model = "SR-S25G3420F"
+sirivisionUptime.targets[0].sensors = [
+  {
+    name: "Switch Uptime",
+    source: "sirivision_uptime",
+  },
+]
+if (!validate(sirivisionUptime)) {
+  console.error(validate.errors)
+  throw new Error("Valid Sirivision derived uptime sensor should validate")
+}
+
 console.log("Switch Vision SNMP2MQTT config-schema regression: PASS")

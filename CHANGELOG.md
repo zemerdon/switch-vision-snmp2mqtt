@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.4 — Sirivision chassis uptime
+
+- Add exact-model `sirivision_uptime` polling for SR-S25G3420F switches whose SNMP agent can reset standard `sysUpTime.0` without a chassis reboot.
+- Reconstruct the reviewed chassis uptime from live `snmpEngineTime.0` seconds plus the device's `sysORLastChange.0` TimeTicks offset, while keeping this behavior vendor-scoped rather than treating it as a generic SNMP rule.
+- Restrict the derived source to exact `device_model: SR-S25G3420F` configurations and add schema, semantic, and runtime regressions using the admitted field sequence.
+- Preserve existing direct SNMP, live-interface, Juniper VLAN, MQTT, transform, Counter64, and shutdown behavior.
+
 ## v1.0.3 — BER-safe Counter64 decoding
 
 - Decode received SNMP Counter64 BER payloads from their valid variable-length unsigned representation instead of requiring every value to be exactly eight bytes.
