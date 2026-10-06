@@ -10,6 +10,9 @@ const {
   JUNIPER_VLAN_OIDS,
 } = require("../dist/vendors/juniper/vlan")
 const {
+  QBRIDGE_VLAN_OIDS,
+} = require("../dist/vendors/qbridge/vlan")
+const {
   SIRIVISION_UPTIME_OIDS,
 } = require("../dist/vendors/sirivision/uptime")
 
@@ -452,6 +455,172 @@ async function testEx3300ResumeAfterConfirmation() {
   assert.ok(calls.includes(JUNIPER_VLAN_OIDS.dot1qPvid))
 }
 
+const gs1900IfNames = Array.from({ length: 8 }, (_, index) => [
+  String(index + 1),
+  `GigabitEthernet${index + 1}`,
+])
+const gs1900BridgePorts = Array.from({ length: 8 }, (_, index) => [
+  String(index + 1),
+  index + 1,
+])
+
+async function testQBridgeVlan100FieldEvidence() {
+  const target = new Target(
+    {
+      host: "192.0.2.80",
+      device_model: "GS1900-8",
+      sensors: [
+        {
+          name: "Port 2 Native VLAN",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet2",
+          attribute: "native_vlan",
+        },
+        {
+          name: "Port 2 VLANs",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet2",
+          attribute: "vlans",
+        },
+        {
+          name: "Port 2 Tagged VLANs",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet2",
+          attribute: "tagged_vlans",
+        },
+        {
+          name: "Port 2 Untagged VLANs",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet2",
+          attribute: "untagged_vlans",
+        },
+        {
+          name: "Port 2 VLAN Mode",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet2",
+          attribute: "mode",
+        },
+      ],
+    },
+    log,
+  )
+
+  const pvids = Array.from({ length: 8 }, (_, index) => [
+    String(index + 1),
+    index === 1 ? 100 : 1,
+  ])
+  installSubtreeSession(target, {
+    [IF_NAME_OID]: gs1900IfNames,
+    [QBRIDGE_VLAN_OIDS.dot1dBasePortIfIndex]: gs1900BridgePorts,
+    [QBRIDGE_VLAN_OIDS.dot1qPvid]: pvids,
+    [QBRIDGE_VLAN_OIDS.dot1qVlanCurrentEgressPorts]: [
+      ["0.1", Buffer.from([0xff])],
+      ["0.100", Buffer.from([0x40])],
+    ],
+    [QBRIDGE_VLAN_OIDS.dot1qVlanStaticEgressPorts]: [
+      ["1", Buffer.from([0xff])],
+      ["100", Buffer.from([0x40])],
+    ],
+    [QBRIDGE_VLAN_OIDS.dot1qVlanStaticUntaggedPorts]: [
+      ["1", Buffer.from([0xff])],
+      ["100", Buffer.from([0x00])],
+    ],
+  })
+
+  const values = await fetchResponse(target)
+  assert.deepStrictEqual(values, [100, "1,100", "100", "1", "TRUNK"])
+}
+
+async function testQBridgeVlanMembershipFieldEvidence() {
+  const target = new Target(
+    {
+      host: "192.0.2.81",
+      device_model: "GS1900-8",
+      sensors: [
+        {
+          name: "Port 2 Native VLAN",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet2",
+          attribute: "native_vlan",
+        },
+        {
+          name: "Port 2 VLANs",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet2",
+          attribute: "vlans",
+        },
+        {
+          name: "Port 2 Tagged VLANs",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet2",
+          attribute: "tagged_vlans",
+        },
+        {
+          name: "Port 6 VLANs",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet6",
+          attribute: "vlans",
+        },
+        {
+          name: "Port 8 VLANs",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet8",
+          attribute: "vlans",
+        },
+        {
+          name: "Port 8 Untagged VLANs",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet8",
+          attribute: "untagged_vlans",
+        },
+        {
+          name: "Port 8 VLAN Mode",
+          source: "qbridge_vlan",
+          interface: "GigabitEthernet8",
+          attribute: "mode",
+        },
+      ],
+    },
+    log,
+  )
+
+  const pvids = Array.from({ length: 8 }, (_, index) => [
+    String(index + 1),
+    1,
+  ])
+  installSubtreeSession(target, {
+    [IF_NAME_OID]: gs1900IfNames,
+    [QBRIDGE_VLAN_OIDS.dot1dBasePortIfIndex]: gs1900BridgePorts,
+    [QBRIDGE_VLAN_OIDS.dot1qPvid]: pvids,
+    [QBRIDGE_VLAN_OIDS.dot1qVlanCurrentEgressPorts]: [
+      ["0.1", Buffer.from([0xff])],
+      ["0.10", Buffer.from([0x45])],
+      ["0.20", Buffer.from([0x40])],
+    ],
+    [QBRIDGE_VLAN_OIDS.dot1qVlanStaticEgressPorts]: [
+      ["1", Buffer.from([0xff])],
+      ["10", Buffer.from([0x45])],
+      ["20", Buffer.from([0x40])],
+    ],
+    [QBRIDGE_VLAN_OIDS.dot1qVlanStaticUntaggedPorts]: [
+      ["1", Buffer.from([0xff])],
+      ["10", Buffer.from([0x01])],
+      ["20", Buffer.from([0x00])],
+    ],
+  })
+
+  const values = await fetchResponse(target)
+  assert.deepStrictEqual(values, [
+    1,
+    "1,10,20",
+    "10,20",
+    "1,10",
+    "1,10",
+    "1,10",
+    "TRUNK",
+  ])
+}
+
 async function testSirivisionDerivedUptime() {
   const target = new Target(
     {
@@ -535,10 +704,12 @@ async function main() {
   await testEx3300WatcherDebounce()
   await testEx3300PendingAndStaleSuppression()
   await testEx3300ResumeAfterConfirmation()
+  await testQBridgeVlan100FieldEvidence()
+  await testQBridgeVlanMembershipFieldEvidence()
   await testSirivisionDerivedUptime()
   await testNonEx3300Compatibility()
   console.log(
-    "Switch Vision SNMP2MQTT Core v1.0.4 SNMP runtime regression: PASS",
+    "Switch Vision SNMP2MQTT Core v1.0.5 SNMP runtime regression: PASS",
   )
 }
 

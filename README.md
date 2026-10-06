@@ -101,6 +101,8 @@ Supported attributes:
 
 The collector uses numeric OIDs for `ifName`, `dot1dBasePortIfIndex`, `dot1qPvid`, `jnxExVlanName`, `jnxExVlanTag`, `jnxExVlanPortTagness`, and `jnxExVlanPortAccessMode`. Local Juniper MIB files are not required at runtime.
 
+For switches whose standard Q-BRIDGE tables expose complete bridge-port membership, use `source: qbridge_vlan` with the same VLAN attributes. The generic collector correlates `ifName` through `dot1dBasePortIfIndex`, treats `dot1qPvid` as the native/PVID value, reads current/static egress port bitmaps for membership, and uses the static untagged bitmap to split tagged from untagged VLANs. Discovery should emit this source only when the current hardware evidence proves those joins/tables; the engine does not infer missing VLANs or ports.
+
 ## Live interface sensors
 
 Switch Vision can resolve IF-MIB sensors by interface name at runtime instead of baking an ifIndex into configuration. This is useful on platforms such as Juniper EX where ifIndex values can be sparse, can change across reboots, and an empty SFP/SFP+ cage may not exist in IF-MIB until an optic is present.

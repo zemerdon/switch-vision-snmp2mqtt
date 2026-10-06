@@ -114,6 +114,20 @@ if (!validate(juniperCandidateVlan)) {
   throw new Error("Juniper VLAN candidate interface list should validate")
 }
 
+const qbridgeVlan = fixture()
+qbridgeVlan.targets[0].sensors = [
+  {
+    name: "Port VLANs",
+    source: "qbridge_vlan",
+    interface: "GigabitEthernet2",
+    attribute: "vlans",
+  },
+]
+if (!validate(qbridgeVlan)) {
+  console.error(validate.errors)
+  throw new Error("Q-BRIDGE VLAN sensor should validate")
+}
+
 const sirivisionUptime = fixture()
 sirivisionUptime.targets[0].device_model = "SR-S25G3420F"
 sirivisionUptime.targets[0].sensors = [

@@ -131,13 +131,18 @@ export function validateConfigSemantics(config: Config): string[] {
             `${sensorPath}: unsupported interface attribute '${sensor.attribute ?? ""}'`,
           )
         }
-      } else if (source === "juniper_ex_vlan") {
+      } else if (
+        source === "juniper_ex_vlan" ||
+        source === "qbridge_vlan"
+      ) {
         if (
           !sensor.attribute ||
           !JUNIPER_VLAN_ATTRIBUTES.has(sensor.attribute)
         ) {
+          const label =
+            source === "juniper_ex_vlan" ? "Juniper VLAN" : "Q-BRIDGE VLAN"
           errors.push(
-            `${sensorPath}: unsupported Juniper VLAN attribute '${sensor.attribute ?? ""}'`,
+            `${sensorPath}: unsupported ${label} attribute '${sensor.attribute ?? ""}'`,
           )
         }
       }

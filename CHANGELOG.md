@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.5 — Standard Q-BRIDGE VLAN membership
+
+- Add a generic `qbridge_vlan` derived sensor source for standards-based bridge-port/PVID/VLAN membership telemetry without vendor-specific MIB dependencies.
+- Resolve `ifName` through `dot1dBasePortIfIndex`, read current/static egress bitmaps plus static untagged membership, and expose `mode`, `native_vlan`, `vlans`, `tagged_vlans`, `untagged_vlans`, and `summary` through the existing VLAN attribute contract.
+- Add permanent privacy-safe regressions reproducing the reviewed GS1900-8 VLAN 100 and VLAN 10/20 field captures, including multiple memberships on port 2 and VLAN 10 membership on ports 6 and 8.
+- Preserve existing direct SNMP, live-interface, Juniper VLAN, Sirivision uptime, MQTT, transform, Counter64, and shutdown behavior.
+
 ## v1.0.4 — Sirivision chassis uptime
 
 - Add exact-model `sirivision_uptime` polling for SR-S25G3420F switches whose SNMP agent can reset standard `sysUpTime.0` without a chassis reboot.

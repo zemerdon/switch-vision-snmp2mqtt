@@ -15,6 +15,10 @@ import {
   juniperVlanAttributeValue,
 } from "./vendors/juniper/vlan"
 import {
+  collectQBridgeVlanPortStates,
+  qbridgeVlanAttributeValue,
+} from "./vendors/qbridge/vlan"
+import {
   IF_NAME_OID,
   interfaceCandidates,
   interfaceOid,
@@ -252,12 +256,15 @@ export class Target extends EventEmitter {
     const juniperSensors = this.options.sensors
       .map((sensor, index) => ({ sensor, index }))
       .filter(({ sensor }) => sensor.source === "juniper_ex_vlan")
+    const qbridgeSensors = this.options.sensors
+      .map((sensor, index) => ({ sensor, index }))
+      .filter(({ sensor }) => sensor.source === "qbridge_vlan")
     const sirivisionUptimeSensors = this.options.sensors
       .map((sensor, index) => ({ sensor, index }))
       .filter(({ sensor }) => sensor.source === "sirivision_uptime")
 
     this.log.debug(
-      `Fetching ${normalSensors.length} direct sensor(s), ${interfaceSensors.length} live interface sensor(s), ${juniperSensors.length} Juniper VLAN sensor(s), and ${sirivisionUptimeSensors.length} Sirivision uptime sensor(s) from ${this.options.host}...`,
+      `Fetching ${normalSensors.length} direct sensor(s), ${interfaceSensors.length} live interface sensor(s), ${juniperSensors.length} Juniper VLAN sensor(s), ${qbridgeSensors.length} Q-BRIDGE VLAN sensor(s), and ${sirivisionUptimeSensors.length} Sirivision uptime sensor(s) from ${this.options.host}...`,
     )
 
     const values: Array<string | number | bigint | boolean | Error> = new Array(
@@ -307,7 +314,11 @@ export class Target extends EventEmitter {
       }
 
       let ifNames: SnmpTable | undefined
-      if (interfaceSensors.length || juniperSensors.length) {
+      if (
+        interfaceSensors.length ||
+        juniperSensors.length ||
+        qbridgeSensors.length
+      ) {
         try {
           ifNames = await walkTable(this.session, IF_NAME_OID)
         } catch (error) {
@@ -315,6 +326,7 @@ export class Target extends EventEmitter {
             error instanceof Error ? error : new Error(String(error))
           for (const { index } of interfaceSensors) values[index] = failure
           for (const { index } of juniperSensors) values[index] = failure
+          for (const { index } of qbridgeSensors) values[index] = failure
         }
       }
 
@@ -493,6 +505,48 @@ export class Target extends EventEmitter {
               error instanceof Error ? error : new Error(String(error))
             for (const { index } of requests) values[index] = failure
           }
+        }
+      }
+
+      if (qbridgeSensors.length && ifNames) {
+        try {
+          const states = await collectQBridgeVlanPortStates(
+            this.session,
+            ifNames,
+          )
+
+          for (const { sensor, index } of qbridgeSensors) {
+            const candidates = interfaceCandidates(sensor)
+            let state
+            let resolvedName = ""
+
+            for (const candidate of candidates) {
+              state = states.get(candidate)
+              if (state) {
+                resolvedName = candidate
+                break
+              }
+            }
+
+            if (!state) {
+              values[index] = new SensorUnavailableError(
+                `Q-BRIDGE VLAN data not currently available for interface ${candidates.join(" or ")}`,
+              )
+              continue
+            }
+
+            this.log.debug(
+              `Resolved Q-BRIDGE VLAN sensor ${sensor.name} through ${resolvedName}`,
+            )
+            values[index] = qbridgeVlanAttributeValue(
+              state,
+              sensor.attribute as any,
+            )
+          }
+        } catch (error) {
+          const failure =
+            error instanceof Error ? error : new Error(String(error))
+          for (const { index } of qbridgeSensors) values[index] = failure
         }
       }
 

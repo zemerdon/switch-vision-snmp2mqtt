@@ -73,6 +73,11 @@ export const schema = {
           anyOf: [{ required: ["interface"] }, { required: ["interfaces"] }],
         },
         {
+          properties: { source: { const: "qbridge_vlan" } },
+          required: ["source", "attribute"],
+          anyOf: [{ required: ["interface"] }, { required: ["interfaces"] }],
+        },
+        {
           properties: { source: { const: "interface" } },
           required: ["source", "attribute"],
           anyOf: [{ required: ["interface"] }, { required: ["interfaces"] }],
@@ -88,7 +93,7 @@ export const schema = {
         },
         source: {
           type: "string",
-          enum: ["snmp", "juniper_ex_vlan", "interface", "sirivision_uptime"],
+          enum: ["snmp", "juniper_ex_vlan", "qbridge_vlan", "interface", "sirivision_uptime"],
           default: "snmp",
         },
         interface: {

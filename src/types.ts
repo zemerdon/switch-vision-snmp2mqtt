@@ -57,7 +57,7 @@ export type JuniperVlanAttribute =
 
 export interface SensorConfig {
   oid?: string
-  source?: "snmp" | "juniper_ex_vlan" | "interface" | "sirivision_uptime"
+  source?: "snmp" | "juniper_ex_vlan" | "qbridge_vlan" | "interface" | "sirivision_uptime"
   interface?: string
   interfaces?: string[]
   attribute?: InterfaceAttribute | JuniperVlanAttribute
